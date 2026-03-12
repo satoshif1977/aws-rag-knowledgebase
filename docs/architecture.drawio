@@ -1,0 +1,154 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.6.1 Chrome/142.0.7444.265 Electron/39.8.0 Safari/537.36" version="29.6.1">
+  <diagram name="aws-rag-knowledgebase" id="rag-architecture">
+    <mxGraphModel dx="1010" dy="764" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=16;fontStyle=1;" value="aws-rag-knowledgebase: 社内規定 PDF Q&amp;A システム" vertex="1">
+          <mxGeometry height="40" width="520" x="337" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="user" parent="1" style="shape=mxgraph.aws4.user;fillColor=#232F3E;strokeColor=none;labelBackgroundColor=none;sketch=0;" value="" vertex="1">
+          <mxGeometry height="50" width="50" x="60" y="208" as="geometry" />
+        </mxCell>
+        <mxCell id="user_label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=10;fontStyle=1;" value="ユーザー&#xa;（ブラウザ）" vertex="1">
+          <mxGeometry height="30" width="100" x="35" y="258" as="geometry" />
+        </mxCell>
+        <mxCell id="aws_cloud" parent="1" style="points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_aws_cloud_alt;strokeColor=#232F3E;fillColor=#ffffff;verticalAlign=top;align=center;spacingTop=25;fontStyle=1;fontSize=12;" value="AWS Cloud (ap-northeast-1)" vertex="1">
+          <mxGeometry height="700" width="740" x="440" y="80" as="geometry" />
+        </mxCell>
+        <mxCell id="apigw" parent="1" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.api_gateway;labelBackgroundColor=none;sketch=0;fillColor=#E7157B;strokeColor=none;" value="" vertex="1">
+          <mxGeometry height="55" width="55" x="531" y="205" as="geometry" />
+        </mxCell>
+        <mxCell id="apigw_label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=10;fontStyle=1;" value="API Gateway&#xa;REST API / POST /query" vertex="1">
+          <mxGeometry height="35" width="115" x="501" y="265" as="geometry" />
+        </mxCell>
+        <mxCell id="lambda" parent="1" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.lambda;labelBackgroundColor=none;sketch=0;fillColor=#E7157B;strokeColor=none;" value="" vertex="1">
+          <mxGeometry height="55" width="55" x="770" y="205" as="geometry" />
+        </mxCell>
+        <mxCell id="bedrock" parent="1" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.bedrock;labelBackgroundColor=none;sketch=0;fillColor=#01A88D;strokeColor=none;" value="" vertex="1">
+          <mxGeometry height="55" width="55" x="1058" y="205" as="geometry" />
+        </mxCell>
+        <mxCell id="bedrock_label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=10;fontStyle=1;" value="Amazon Bedrock&#xa;回答生成（Claude 3 Haiku）" vertex="1">
+          <mxGeometry height="35" width="125" x="1023" y="265" as="geometry" />
+        </mxCell>
+        <mxCell id="s3_label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=10;fontStyle=1;" value="Amazon S3&#xa;PDF ドキュメント格納" vertex="1">
+          <mxGeometry height="35" width="115" x="742" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="cwlogs_label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=10;fontStyle=1;" value="CloudWatch Logs&#xa;ログ保存（3日間）" vertex="1">
+          <mxGeometry height="35" width="115" x="1030" y="480" as="geometry" />
+        </mxCell>
+        <mxCell id="iam" parent="1" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.role;labelBackgroundColor=none;sketch=0;fillColor=#DD344C;strokeColor=none;" value="" vertex="1">
+          <mxGeometry height="55" width="55" x="770" y="600" as="geometry" />
+        </mxCell>
+        <mxCell id="iam_label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=10;fontStyle=1;" value="IAM Role&#xa;S3読取・Bedrock呼出・CW書込" vertex="1">
+          <mxGeometry height="35" width="135" x="732" y="660" as="geometry" />
+        </mxCell>
+        <mxCell id="ssm" parent="1" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.systems_manager_parameter_store;labelBackgroundColor=none;sketch=0;fillColor=#E7157B;strokeColor=none;" value="" vertex="1">
+          <mxGeometry height="55" width="55" x="1058" y="600" as="geometry" />
+        </mxCell>
+        <mxCell id="ssm_label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=10;fontStyle=1;" value="SSM Parameter Store&#xa;モデルID・S3キー・プロンプト" vertex="1">
+          <mxGeometry height="35" width="130" x="1023" y="660" as="geometry" />
+        </mxCell>
+        <mxCell id="flow_box" parent="1" style="shape=mxgraph.aws4.note;whiteSpace=wrap;html=1;backgroundOutline=1;size=15;fillColor=#fff2cc;strokeColor=#d6b656;align=left;spacingLeft=10;fontSize=11;fontStyle=0;" value="【処理フロー】&#xa;① ユーザーが質問を入力&#xa;② Streamlit → API Gateway /query&#xa;③ API Gateway が Lambda を起動&#xa;④ Lambda が S3 から PDF テキスト取得&#xa;⑤ Bedrock（Claude）で回答生成&#xa;⑥ JSON 応答を Web UI へ返却" vertex="1">
+          <mxGeometry height="160" width="230" x="90" y="530" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="user" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.5;entryX=-0.025;entryY=0.3;strokeColor=#232F3E;strokeWidth=2;entryDx=0;entryDy=0;entryPerimeter=0;" target="streamlit_box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e1_label" connectable="0" parent="e1" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;fontSize=10;" value="質問入力" vertex="1">
+          <mxGeometry relative="0.5" as="geometry">
+            <mxPoint x="-2" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="streamlit_icon" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#E7157B;strokeWidth=2;" target="apigw">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2_label" connectable="0" parent="e2" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;fontSize=10;" value="HTTP POST /query" vertex="1">
+          <mxGeometry relative="0.5" as="geometry">
+            <mxPoint x="24" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="apigw" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#E7157B;strokeWidth=2;" target="lambda">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3_label" connectable="0" parent="e3" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;fontSize=10;" value="Invoke" vertex="1">
+          <mxGeometry relative="0.5" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="lambda" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;strokeColor=#3F8624;strokeWidth=2;" target="s3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4_label" connectable="0" parent="e4" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;fontSize=10;" value="PDF テキスト取得" vertex="1">
+          <mxGeometry relative="0.5" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="lambda" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;strokeColor=#01A88D;strokeWidth=2;" target="bedrock">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5_label" connectable="0" parent="e5" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;fontSize=10;" value="PDF内容＋質問" vertex="1">
+          <mxGeometry relative="0.5" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;strokeColor=#E7157B;strokeWidth=1;dashed=1;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="810" y="460" />
+              <mxPoint x="1058" y="460" />
+            </Array>
+            <mxPoint x="810" y="260" as="sourcePoint" />
+            <mxPoint x="1058" y="460" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e6_label" connectable="0" parent="e6" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;fontSize=10;" value="ログ出力" vertex="1">
+          <mxGeometry relative="0.5" as="geometry">
+            <mxPoint x="106" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="lambda" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=1;exitY=1;strokeColor=#666666;strokeWidth=1;dashed=1;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="825" y="430" />
+              <mxPoint x="1086" y="430" />
+              <mxPoint x="1086" y="600" />
+            </Array>
+            <mxPoint x="1086" y="600" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e8_label" connectable="0" parent="e8" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;fontSize=10;" value="設定値取得&#xa;（モデルID・S3キー・プロンプト）" vertex="1">
+          <mxGeometry relative="0.5" as="geometry">
+            <mxPoint x="-16" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;exitX=0.5;exitY=0;entryX=0.5;entryY=1;strokeColor=#DD344C;strokeWidth=1;dashed=1;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="782.5" y="600" as="sourcePoint" />
+            <mxPoint x="782.5" y="259.9999999999999" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e7_label" connectable="0" parent="e7" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;fontSize=10;" value="実行権限付与" vertex="1">
+          <mxGeometry relative="0.5" as="geometry">
+            <mxPoint y="130" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="8SnoobTKe9vUw7sOrTjf-2" connectable="0" parent="1" style="group" value="" vertex="1">
+          <mxGeometry height="110" width="140" x="220" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="streamlit_box" parent="8SnoobTKe9vUw7sOrTjf-2" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;dashed=1;" value="" vertex="1">
+          <mxGeometry height="110" width="140" as="geometry" />
+        </mxCell>
+        <mxCell id="streamlit_icon" parent="8SnoobTKe9vUw7sOrTjf-2" style="shape=mxgraph.aws4.traditional_server;fillColor=#E7157B;strokeColor=none;sketch=0;" value="" vertex="1">
+          <mxGeometry height="45" width="45" x="45" y="10" as="geometry" />
+        </mxCell>
+        <mxCell id="streamlit_label" parent="8SnoobTKe9vUw7sOrTjf-2" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=10;fontStyle=1;" value="Streamlit Web UI&#xa;ローカル起動 / boto3" vertex="1">
+          <mxGeometry height="40" width="118" x="10" y="60" as="geometry" />
+        </mxCell>
+        <mxCell id="cwlogs" parent="1" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.cloudwatch;labelBackgroundColor=none;sketch=0;fillColor=#E7157B;strokeColor=none;" value="" vertex="1">
+          <mxGeometry height="55" width="55" x="1058" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="s3" parent="1" style="shape=mxgraph.aws4.resourceIcon;resIcon=mxgraph.aws4.s3;labelBackgroundColor=none;sketch=0;fillColor=#3F8624;strokeColor=none;" value="" vertex="1">
+          <mxGeometry height="55" width="55" x="770" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="lambda_label" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;fontSize=10;fontStyle=1;" value="Lambda&#xa;PDF抽出・推論制御" vertex="1">
+          <mxGeometry height="35" width="115" x="742" y="265" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
