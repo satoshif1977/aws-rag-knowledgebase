@@ -1,1 +1,142 @@
 # aws-rag-knowledgebase
+
+社内ドキュメント（テキスト）を S3 に格納し、Amazon Bedrock（Claude）で Q&A 回答を返す **RAG PoC** です。
+Serverless 構成（Lambda + API Gateway）で、Streamlit の Web UI から手軽に試せます。
+
+---
+
+## アーキテクチャ
+
+![構成図](docs/architecture.drawio.png)
+
+| # | 処理フロー |
+|---|-----------|
+| ① | Streamlit UI から Lambda を boto3 で直接 Invoke |
+| ② | Lambda が S3 からドキュメントテキストを取得 |
+| ③ | ドキュメント内容をコンテキストとして Bedrock（Claude 3 Haiku）に送信 |
+| ④ | Bedrock が RAG 回答を生成して返却 |
+| ⑤ | Streamlit が回答と参照元ソースをチャット形式で表示 |
+
+---
+
+## 使用技術
+
+| カテゴリ | 技術 |
+|---------|------|
+| AI モデル | Amazon Bedrock（Claude 3 Haiku） |
+| バックエンド | AWS Lambda（Python 3.11） |
+| API | Amazon API Gateway（REST API） |
+| ストレージ | Amazon S3 |
+| 監視 | Amazon CloudWatch Logs |
+| Web UI | Streamlit + boto3 |
+| IaC | Terraform |
+
+---
+
+## スクリーンショット
+
+### Streamlit デモ画面（社内規定ドキュメント Q&A）
+
+![Streamlit デモ](docs/screenshots/02_streamlit_demo.png)
+
+- 有給休暇・リモートワーク・経費申請について S3 ドキュメントから正確に回答
+- `📂 S3 ドキュメント参照` ラベルでドキュメントベースの回答であることを明示
+
+### Lambda 関数
+
+| 関数概要 + API Gateway トリガー | コードソース・ランタイム |
+|--------------------------------|------------------------|
+| ![](docs/screenshots/05_lambda_trigger.png) | ![](docs/screenshots/01_lambda_code.png) |
+
+### S3 バケット・ドキュメント
+
+| バケット一覧 | knowledge.txt の詳細 |
+|------------|---------------------|
+| ![](docs/screenshots/06_s3_bucket.png) | ![](docs/screenshots/03_s3_document.png) |
+
+### API Gateway
+
+![API Gateway リソース](docs/screenshots/04_apigateway_resource.png)
+
+---
+
+## ディレクトリ構成
+
+```
+aws-rag-knowledgebase/
+├── app/
+│   ├── app.py              # Streamlit Web UI
+│   └── requirements.txt
+├── docs/
+│   ├── architecture.drawio
+│   ├── architecture.drawio.png
+│   └── screenshots/        # 動作確認スクリーンショット
+├── lambda/
+│   └── index.py            # RAG 処理（S3 取得 + Bedrock 呼び出し）
+└── terraform/
+    ├── main.tf             # S3 / Lambda / API Gateway / IAM / CloudWatch
+    ├── variables.tf
+    ├── outputs.tf
+    └── terraform.tfvars.example
+```
+
+---
+
+## セットアップ
+
+### 前提
+
+- AWS CLI / aws-vault 設定済み
+- Terraform >= 1.5
+- Amazon Bedrock で Claude 3 Haiku のモデルアクセスを有効化済み
+
+### デプロイ手順
+
+```bash
+# 1. Terraform 変数ファイルを作成
+cd terraform
+cp terraform.tfvars.example terraform.tfvars
+# terraform.tfvars を環境に合わせて編集
+
+# 2. デプロイ
+aws-vault exec <profile> -- terraform init
+aws-vault exec <profile> -- terraform apply
+
+# 3. S3 にドキュメントをアップロード
+aws-vault exec <profile> -- aws s3 cp ../knowledge.txt \
+  s3://<バケット名>/documents/knowledge.txt
+
+# 4. Streamlit 起動
+cd ../app
+aws-vault exec <profile> -- streamlit run app.py
+```
+
+### Streamlit サイドバー設定
+
+| 項目 | 説明 |
+|------|------|
+| Lambda 関数名 | Terraform output の `lambda_function_name` |
+| AWS リージョン | `ap-northeast-1`（デフォルト） |
+
+---
+
+## ポートフォリオ・面談ポイント
+
+- **Serverless RAG 実装**: OpenSearch 等の Vector DB を使わず、S3 テキスト＋プロンプトエンジニアリングで RAG を実現（PoC に最適な軽量構成）
+- **API Gateway vs Lambda Function URL**: SCP によるブロックがある企業アカウントでは API Gateway が安定
+- **IAM 最小権限**: S3・Bedrock・SSM のみに絞ったインラインポリシー
+- **Lambda Function URL との差別化**: 本プロジェクトは REST API として `/query` エンドポイントを公開（aws-bedrock-agent との設計比較が可能）
+- **コスト感**: Lambda（呼び出し課金）+ API Gateway（呼び出し課金）+ S3（保存料）≒ ほぼ無料（PoC 規模）
+
+---
+
+## 関連リポジトリ
+
+| リポジトリ | 概要 |
+|-----------|------|
+| [aws-bedrock-agent](https://github.com/satoshif1977/aws-bedrock-agent) | Slack Bot + Bedrock Agent（Function URL 使用） |
+| [interview-challenge](https://github.com/satoshif1977/interview-challenge) | 3 層 Web アーキテクチャ（VPC / ALB / EC2 / RDS） |
+
+---
+
+*Managed by Terraform / Powered by Amazon Bedrock*

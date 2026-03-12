@@ -66,9 +66,15 @@ resource "aws_iam_role_policy" "lambda_permissions" {
       {
         # Bedrock 呼び出し権限
         Effect   = "Allow"
-        Action   = ["bedrock:InvokeModel"]
+        Action   = ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"]
         Resource = "*"
         # TODO: 本番では使用するモデル ARN に絞る
+      },
+      {
+        # Bedrock モデルアクセスに必要な AWS Marketplace 権限
+        Effect   = "Allow"
+        Action   = ["aws-marketplace:ViewSubscriptions", "aws-marketplace:Subscribe", "aws-marketplace:Unsubscribe"]
+        Resource = "*"
       },
       {
         # S3 読み取り権限（ドキュメントバケットのみ）

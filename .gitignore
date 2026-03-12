@@ -11,3 +11,5 @@ __pycache__/
 .env
 *.docx
 payload.json
+knowledge.txt
+docx_extracted/
