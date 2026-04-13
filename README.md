@@ -120,7 +120,7 @@ aws-vault exec <profile> -- streamlit run app.py
 
 ---
 
-## ポートフォリオ・面談ポイント
+## 技術的なポイント・工夫
 
 - **Serverless RAG 実装**: OpenSearch 等の Vector DB を使わず、S3 テキスト＋プロンプトエンジニアリングで RAG を実現（PoC に最適な軽量構成）
 - **API Gateway vs Lambda Function URL**: SCP によるブロックがある企業アカウントでは API Gateway が安定
