@@ -1,6 +1,7 @@
 # aws-rag-knowledgebase
 
 ![CI](https://github.com/satoshif1977/aws-rag-knowledgebase/actions/workflows/python-lint.yml/badge.svg)
+[![codecov](https://codecov.io/gh/satoshif1977/aws-rag-knowledgebase/branch/master/graph/badge.svg)](https://codecov.io/gh/satoshif1977/aws-rag-knowledgebase)
 ![AWS](https://img.shields.io/badge/AWS-232F3E?style=flat&logo=amazon-aws&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
 ![Terraform](https://img.shields.io/badge/Terraform-623CE4?style=flat&logo=terraform&logoColor=white)
