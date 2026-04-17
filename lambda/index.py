@@ -40,7 +40,9 @@ def get_document_from_s3(bucket: str, key: str) -> str:
         s3_client = boto3.client("s3", region_name=AWS_REGION)
         response = s3_client.get_object(Bucket=bucket, Key=key)
         content = response["Body"].read().decode("utf-8")
-        logger.info(f"S3 ドキュメント取得成功: s3://{bucket}/{key} ({len(content)} 文字)")
+        logger.info(
+            f"S3 ドキュメント取得成功: s3://{bucket}/{key} ({len(content)} 文字)"
+        )
         return content
     except ClientError as e:
         error_code = e.response["Error"]["Code"]
@@ -75,14 +77,14 @@ def invoke_bedrock(document_text: str, question: str) -> str:
 【質問】
 {question}"""
 
-    body = json.dumps({
-        "anthropic_version": "bedrock-2023-05-31",
-        "max_tokens": 1000,
-        "system": SYSTEM_PROMPT,
-        "messages": [
-            {"role": "user", "content": user_message}
-        ]
-    })
+    body = json.dumps(
+        {
+            "anthropic_version": "bedrock-2023-05-31",
+            "max_tokens": 1000,
+            "system": SYSTEM_PROMPT,
+            "messages": [{"role": "user", "content": user_message}],
+        }
+    )
 
     try:
         response = bedrock_client.invoke_model(
@@ -160,8 +162,5 @@ def handler(event: dict, context) -> dict:
             "Content-Type": "application/json",
             "Access-Control-Allow-Origin": "*",
         },
-        "body": json.dumps(
-            {"answer": answer, "source": source},
-            ensure_ascii=False
-        ),
+        "body": json.dumps({"answer": answer, "source": source}, ensure_ascii=False),
     }
