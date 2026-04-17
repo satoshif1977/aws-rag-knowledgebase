@@ -28,7 +28,9 @@ class TestGetDocumentFromS3:
     def test_NoSuchKey_の場合は空文字を返す(self, mock_client):
         mock_s3 = MagicMock()
         mock_client.return_value = mock_s3
-        error = ClientError({"Error": {"Code": "NoSuchKey", "Message": ""}}, "GetObject")
+        error = ClientError(
+            {"Error": {"Code": "NoSuchKey", "Message": ""}}, "GetObject"
+        )
         mock_s3.get_object.side_effect = error
         result = get_document_from_s3("my-bucket", "not-exist.txt")
         assert result == ""
