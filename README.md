@@ -160,6 +160,47 @@ aws-vault exec <profile> -- streamlit run app.py
 
 ---
 
+## CI / セキュリティスキャン
+
+GitHub Actions で Python リント（flake8）と Terraform の静的解析（Checkov）を自動実行しています。
+
+### 実施内容
+
+| ジョブ | 内容 |
+|---|---|
+| Python lint（flake8） | コードスタイル・構文エラーの検出 |
+| terraform fmt / validate | フォーマット・構文チェック |
+| Checkov セキュリティスキャン | IaC のセキュリティポリシー違反を検出（soft_fail: false） |
+
+### セキュリティ対応（Terraform で修正した内容）
+
+| リソース | 追加設定 |
+|---|---|
+| S3（documents バケット） | SSE-AES256 暗号化・パブリックアクセスブロック（4項目）・バージョニング・ライフサイクル（90日削除 + multipart abort 7日） |
+| Lambda | `tracing_config { mode = "PassThrough" }`（X-Ray 有効化） |
+| IAM（Bedrock ポリシー） | `Resource = "*"` → 特定モデル ARN に限定 |
+| CloudWatch Logs | 保持期間のデフォルトを 30 日に設定 |
+
+### 意図的にスキップしている項目（PoC の合理的な省略）
+
+| チェック ID | 内容 | 理由 |
+|---|---|---|
+| CKV_AWS_117 | Lambda VPC 内配置 | dev/PoC では不要 |
+| CKV_AWS_272 | Lambda コード署名 | dev/PoC では不要 |
+| CKV_AWS_116 | Lambda DLQ 設定 | dev/PoC では不要 |
+| CKV_AWS_115 | Lambda 予約済み同時実行 | dev/PoC では不要 |
+| CKV_AWS_173 | Lambda 環境変数 KMS | dev/PoC では不要 |
+| CKV_AWS_158 | CloudWatch Logs KMS | dev/PoC では不要 |
+| CKV_AWS_338 | CloudWatch Logs 保持期間 1 年未満 | dev は 30 日で十分 |
+| CKV_AWS_145 | S3 KMS 暗号化 | AES256 で十分 |
+| CKV_AWS_18 | S3 アクセスログ | dev/PoC では不要 |
+| CKV_AWS_144 | S3 クロスリージョンレプリケーション | dev/PoC では不要 |
+| CKV2_AWS_62 | S3 通知設定 | dev/PoC では不要 |
+| API Gateway 系（複数） | 認証・WAF・アクセスログ・X-Ray・キャッシュ | dev/PoC では不要 |
+| CKV_AWS_111 / CKV_AWS_356（インライン） | aws-marketplace Resource `"*"` | AWS がリソースレベル制限を非対応 |
+
+---
+
 ## AI 活用について
 
 本プロジェクトは以下の Anthropic ツールを活用して開発しています。
