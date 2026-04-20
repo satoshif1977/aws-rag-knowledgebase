@@ -91,11 +91,12 @@ resource "aws_iam_role_policy" "lambda_permissions" {
         # Bedrock 呼び出し権限
         Effect   = "Allow"
         Action   = ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"]
-        Resource = "*"
-        # TODO: 本番では使用するモデル ARN に絞る
+        Resource = "arn:aws:bedrock:${var.aws_region}::foundation-model/${var.bedrock_model_id}"
       },
       {
         # Bedrock モデルアクセスに必要な AWS Marketplace 権限
+        # checkov:skip=CKV_AWS_111: aws-marketplace アクションはリソースレベルの制限を AWS がサポートしていないため "*" が必須
+        # checkov:skip=CKV_AWS_356: 同上
         Effect   = "Allow"
         Action   = ["aws-marketplace:ViewSubscriptions", "aws-marketplace:Subscribe", "aws-marketplace:Unsubscribe"]
         Resource = "*"
