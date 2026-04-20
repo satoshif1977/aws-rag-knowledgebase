@@ -35,9 +35,9 @@ variable "lambda_memory_size" {
 }
 
 variable "log_retention_days" {
-  description = "CloudWatch Logs の保持日数"
+  description = "CloudWatch Logs の保持日数（dev: 30, prod: 90 を推奨）"
   type        = number
-  default     = 3
+  default     = 30
 }
 
 variable "s3_pdf_key" {
