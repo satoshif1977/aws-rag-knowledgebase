@@ -151,7 +151,7 @@ aws-vault exec <profile> -- streamlit run app.py
 | リポジトリ | 概要 |
 |-----------|------|
 | [aws-bedrock-agent](https://github.com/satoshif1977/aws-bedrock-agent) | Slack Bot + Bedrock Agent（Function URL 使用） |
-| [interview-challenge](https://github.com/satoshif1977/interview-challenge) | 3 層 Web アーキテクチャ（VPC / ALB / EC2 / RDS） |
+| [terraform-3tier-webapp](https://github.com/satoshif1977/terraform-3tier-webapp) | 3 層 Web アーキテクチャ（VPC / ALB / EC2 / RDS） |
 
 ---
 
