@@ -1,7 +1,6 @@
 # aws-rag-knowledgebase
 
 ![CI](https://github.com/satoshif1977/aws-rag-knowledgebase/actions/workflows/python-lint.yml/badge.svg)
-[![codecov](https://codecov.io/gh/satoshif1977/aws-rag-knowledgebase/branch/master/graph/badge.svg)](https://codecov.io/gh/satoshif1977/aws-rag-knowledgebase)
 ![AWS](https://img.shields.io/badge/AWS-232F3E?style=flat&logo=amazon-aws&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
 ![Terraform](https://img.shields.io/badge/Terraform-623CE4?style=flat&logo=terraform&logoColor=white)
@@ -153,6 +152,24 @@ aws-vault exec <profile> -- streamlit run app.py
 |-----------|------|
 | [aws-bedrock-agent](https://github.com/satoshif1977/aws-bedrock-agent) | Slack Bot + Bedrock Agent（Function URL 使用） |
 | [interview-challenge](https://github.com/satoshif1977/interview-challenge) | 3 層 Web アーキテクチャ（VPC / ALB / EC2 / RDS） |
+
+---
+
+## 学習で気づいたこと・躓いたポイント
+
+### Bedrock / Lambda
+
+- **Bedrock モデルアクセスの有効化が必要**: コンソールから事前にモデルアクセスを申請しないと `AccessDeniedException` で詰まる。Terraform apply 前に必ず確認。
+- **Lambda コールドスタートと API Gateway タイムアウト**: Lambda 初回起動（コールドスタート）が遅い場合、API Gateway の統合タイムアウト（デフォルト 29 秒）で先に切れることがある。PoC 規模ではほぼ問題ないが本番では Provisioned Concurrency が選択肢に入る。
+
+### Terraform / S3
+
+- **S3 バージョニング有効バケットの `terraform destroy` が失敗する**: バージョニングを有効にすると削除マーカーが残り、`terraform destroy` が途中で失敗する。バージョン一覧を取得して手動削除してから `destroy` する手順が必要。
+- **API Gateway vs Lambda Function URL**: 企業アカウントでは SCP（サービスコントロールポリシー）により Lambda Function URL がブロックされていることがある。その場合は API Gateway が確実。
+
+### Streamlit + aws-vault
+
+- **Streamlit の起動コマンド**: `aws-vault exec <profile> -- streamlit run app.py` と aws-vault を前置するのがポイント。`streamlit run` だけでは IAM クレデンシャルが引き継がれない。
 
 ---
 
