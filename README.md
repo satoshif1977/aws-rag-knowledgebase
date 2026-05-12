@@ -177,6 +177,48 @@ aws-vault exec <profile> -- streamlit run app.py
 
 ---
 
+## トラブルシューティング
+
+| 症状 | 原因 | 対処法 |
+|---|---|---|
+| `AccessDeniedException` on Bedrock | モデルアクセスが未許可 | コンソール → Bedrock → モデルアクセスで Claude 3 Haiku を有効化 |
+| Lambda が `503` を返す | コールドスタートが API Gateway タイムアウト（29秒）を超えた | Lambda メモリを増やすか Provisioned Concurrency を設定 |
+| `terraform destroy` が失敗 | S3 バージョニング有効バケットに削除マーカーが残存 | `aws s3api list-object-versions` で確認 → 手動削除 → `destroy` を再実行 |
+| Streamlit で `NoCredentialsError` | aws-vault を経由していない | `aws-vault exec <profile> -- streamlit run app.py` で起動 |
+| Lambda 関数名が見つからない | Terraform outputs を未確認 | `terraform output lambda_function_name` で確認してサイドバーに入力 |
+
+---
+
+## ローカル開発・テスト方法
+
+### Streamlit Web UI のローカル起動
+
+```bash
+cd app
+pip install -r requirements.txt
+aws-vault exec personal-dev-source -- streamlit run app.py
+# http://localhost:8501 → サイドバーに Lambda 関数名を入力
+```
+
+### Lambda の手動呼び出し
+
+```bash
+aws-vault exec personal-dev-source -- aws lambda invoke \
+  --function-name $(cd terraform && terraform output -raw lambda_function_name) \
+  --payload '{"query": "有給休暇の申請方法を教えてください"}' \
+  response.json
+cat response.json
+```
+
+### ドキュメント更新後の動作確認
+
+```bash
+aws-vault exec personal-dev-source -- aws s3 cp knowledge.txt \
+  s3://$(cd terraform && terraform output -raw s3_bucket_name)/documents/knowledge.txt
+```
+
+---
+
 ## CI / セキュリティスキャン
 
 GitHub Actions で Python リント（flake8）と Terraform の静的解析（Checkov）を自動実行しています。
