@@ -146,6 +146,42 @@ aws-vault exec <profile> -- streamlit run app.py
 
 ---
 
+## FAQ データ管理・RAG 精度向上方法
+
+### S3 ドキュメントの更新手順
+
+```bash
+# knowledge.txt を更新してから再アップロード
+aws-vault exec <profile> -- aws s3 cp knowledge.txt \
+  s3://<バケット名>/documents/knowledge.txt
+
+# アップロード確認
+aws-vault exec <profile> -- aws s3 ls \
+  s3://<バケット名>/documents/
+```
+
+### ドキュメント作成のポイント
+
+| 項目 | 推奨スタイル |
+|---|---|
+| 見出し | 「## 有給休暇申請」のような明確なセクション区切り |
+| 回答形式 | 箇条書きで手順を列挙すると LLM が回答しやすい |
+| キーワード | 質問で使われやすい言葉（「申請」「締め日」「ルール」）を必ず含める |
+| ファイル分割 | 業務カテゴリ別に複数 .txt に分割してフォルダ管理が推奨 |
+
+### RAG 精度向上のチューニング
+
+| 方法 | 設定箇所 | 効果 |
+|---|---|---|
+| プロンプト調整 | `lambda/index.py` の `prompt` 変数 | 回答のトーン・形式を変更 |
+| ドキュメント整備 | `knowledge.txt` の記述スタイル | 情報が密なほど回答精度が上がる |
+| `max_tokens` 増加 | `lambda/index.py` の `max_tokens` | 長文回答が必要な場合に増やす |
+| ドキュメント分割 | S3 に複数ファイルを配置 | カテゴリ別に Lambda で呼び分け可能 |
+
+> **次のステップ**: 本格的な RAG には [aws-bedrock-knowledgebase-rag](https://github.com/satoshif1977/aws-bedrock-knowledgebase-rag) で Bedrock Knowledge Bases（OpenSearch Serverless）による Vector 検索を参照。
+
+---
+
 ## 関連リポジトリ
 
 | リポジトリ | 概要 |
