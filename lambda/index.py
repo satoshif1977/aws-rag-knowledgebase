@@ -65,10 +65,11 @@ def invoke_bedrock(document_text: str, question: str) -> str:
 
     # ドキュメントが取得できた場合のみコンテキストに追加
     if document_text:
+        # トークン節約のため先頭 8000 文字に制限
         user_message = f"""以下の社内ドキュメントを参照して質問に答えてください。
 
 【社内ドキュメント】
-{document_text[:8000]}  # トークン節約のため先頭 8000 文字に制限
+{document_text[:8000]}
 
 【質問】
 {question}"""
