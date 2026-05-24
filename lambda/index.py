@@ -12,7 +12,7 @@ aws-rag-knowledgebase: 社内規定 PDF Q&A Lambda
 import json
 import logging
 import os
-from typing import Any, Dict
+from typing import Any
 
 import boto3
 from botocore.exceptions import ClientError
@@ -113,7 +113,7 @@ def invoke_bedrock(document_text: str, question: str) -> str:
 
 
 # ── Lambda ハンドラー ──────────────────────────────────────
-def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
+def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     """
     API Gateway からのリクエストを処理する。
     リクエストボディ: {"question": "質問テキスト"}
