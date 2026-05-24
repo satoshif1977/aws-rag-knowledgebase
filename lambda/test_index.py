@@ -8,7 +8,6 @@ import json
 from unittest.mock import MagicMock, patch
 
 from botocore.exceptions import ClientError
-
 from index import get_document_from_s3, handler, invoke_bedrock
 
 
