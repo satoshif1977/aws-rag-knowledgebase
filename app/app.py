@@ -3,10 +3,11 @@ aws-rag-knowledgebase: Streamlit Web UI
 API Gateway 経由で Lambda を呼び出して回答を表示するデモアプリ
 """
 
-import streamlit as st
-import boto3
 import json
 import os
+
+import boto3
+import streamlit as st
 
 # ── ページ設定 ────────────────────────────────────────────────
 st.set_page_config(
