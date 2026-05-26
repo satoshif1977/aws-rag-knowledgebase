@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-05-26
+
+### Fixed
+- README のモデル名を `Claude 3 Haiku` → `Claude 3.5 Haiku` に統一（v1.1.0 でコード移行済みだったが README が未更新だった）
+
 ## [1.1.0] - 2026-05-19
 
 ### Added
