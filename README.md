@@ -84,8 +84,8 @@ aws-rag-knowledgebase/
 │   ├── app.py              # Streamlit Web UI
 │   └── requirements.txt
 ├── docs/
-│   ├── architecture.drawio
-│   ├── architecture.drawio.png
+│   ├── rag-architecture-aws2026.drawio
+│   ├── rag-architecture-aws2026.drawio.png
 │   └── screenshots/        # 動作確認スクリーンショット
 ├── lambda/
 │   └── index.py            # RAG 処理（S3 取得 + Bedrock 呼び出し）
