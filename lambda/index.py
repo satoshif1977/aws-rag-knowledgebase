@@ -23,7 +23,7 @@ logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
 
 # ── 定数（環境変数から取得） ───────────────────────────────
 BEDROCK_MODEL_ID = os.environ.get(
-    "BEDROCK_MODEL_ID", "anthropic.claude-3-5-haiku-20241022-v1:0"
+    "BEDROCK_MODEL_ID", "jp.anthropic.claude-haiku-4-5-20251001-v1:0"
 )
 S3_BUCKET_NAME = os.environ.get("S3_BUCKET_NAME", "")
 S3_PDF_KEY = os.environ.get("S3_PDF_KEY", "documents/knowledge.txt")

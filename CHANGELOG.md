@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-06-01
+
+### Changed
+- Bedrock モデルを `Claude 3.5 Haiku`（ap-northeast-1 で使用不可）→ `Claude Haiku 4.5` に更新
+  （`jp.anthropic.claude-haiku-4-5-20251001-v1:0`）
+- IAM ポリシーに inference-profile ARN と全リージョン foundation-model ARN を追加
+
 ## [1.2.0] - 2026-05-29
 
 ### Changed

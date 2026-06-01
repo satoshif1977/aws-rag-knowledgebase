@@ -91,7 +91,11 @@ resource "aws_iam_role_policy" "lambda_permissions" {
         # Bedrock 呼び出し権限
         Effect   = "Allow"
         Action   = ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"]
-        Resource = "arn:aws:bedrock:${var.aws_region}::foundation-model/${var.bedrock_model_id}"
+        # JP 推論プロファイルは ap-northeast-1/3 にルーティングするため両方の ARN を許可
+        Resource = [
+          "arn:aws:bedrock:${var.aws_region}:${data.aws_caller_identity.current.account_id}:inference-profile/${var.bedrock_model_id}",
+          "arn:aws:bedrock:*::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0"
+        ]
       },
       {
         # Bedrock モデルアクセスに必要な AWS Marketplace 権限

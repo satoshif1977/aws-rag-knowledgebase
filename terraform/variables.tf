@@ -19,7 +19,7 @@ variable "aws_region" {
 variable "bedrock_model_id" {
   description = "使用する Bedrock モデル ID"
   type        = string
-  default     = "anthropic.claude-3-5-haiku-20241022-v1:0"
+  default     = "jp.anthropic.claude-haiku-4-5-20251001-v1:0"
 }
 
 variable "lambda_timeout" {
