@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-06-04
+
+### Added
+- **EventBridge Pipes 追加**（`terraform/pipes.tf`）
+  - SQS（document-ingestion キュー + DLQ）→ Pipes（拡張子フィルター）→ Lambda のパイプラインを Terraform で実装
+  - `aws_pipes_pipe`: `.pdf` / `.txt` / `.md` / `.docx` のみ通過する suffix フィルターを設定（非対応ファイルは Lambda を起動せずに破棄）
+  - `aws_s3_bucket_notification`: S3 ObjectCreated イベントを SQS へ自動送信
+  - SQS: SSE 有効・DLQ 付き（3回失敗で DLQ へ移動）
+  - IAM: Pipes 用・取り込み Lambda 用をそれぞれ最小権限で作成
+- **ドキュメント取り込み Lambda**（`lambda/ingestion_handler.py`）
+  - Pipes から SQS メッセージ（S3 イベント通知）を受け取り S3 からドキュメントを取得・検証
+  - URL エンコードされたキーを自動デコード（日本語ファイル名対応）
+  - 拡張子の二重チェック（Pipes フィルターをすり抜けたファイルへの保険）
+  - レスポンスを `processed` / `skipped` / `errors` に分類して返却
+  - 実運用拡張ポイント: Knowledge Base StartIngestionJob・DynamoDB 登録・SNS 通知
+- **ユニットテスト追加**（`lambda/test_ingestion_handler.py`・11件、全体 21件）
+  - PDF/TXT 取り込み成功・URL エンコードデコード・拡張子スキップ・S3 エラー・不正 JSON・dict 形式イベント
+- **outputs 追加**: `ingestion_queue_url` / `ingestion_dlq_url` / `ingestion_pipe_name` / `ingestion_lambda_name`
+- **`.gitignore` 更新**: `lambda_ingestion.zip` を追加
+
 ## [1.3.0] - 2026-06-01
 
 ### Changed

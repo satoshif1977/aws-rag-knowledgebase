@@ -6,6 +6,7 @@
 *.tfstate
 *.tfstate.backup
 lambda.zip
+lambda_ingestion.zip
 __pycache__/
 *.pyc
 .env
