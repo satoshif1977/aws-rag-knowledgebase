@@ -236,6 +236,23 @@ aws-vault exec personal-dev-source -- streamlit run app.py
 # http://localhost:8501 → サイドバーに Lambda 関数名を入力
 ```
 
+### Python ユニットテスト（AWS 接続不要）
+
+Lambda 関数のロジックを boto3 モックで検証します。
+
+```bash
+pip install pytest boto3 botocore
+pytest lambda/test_index.py lambda/test_ingestion_handler.py -v
+```
+
+| テストファイル | テスト数 | 主な検証内容 |
+|---|---|---|
+| `lambda/test_index.py` | 10 件 | RAG クエリ・Bedrock 呼び出し・エラーハンドリング |
+| `lambda/test_ingestion_handler.py` | 11 件 | S3 取り込み・Knowledge Base 同期・バリデーション |
+| **合計** | **21 件** | |
+
+---
+
 ### Lambda の手動呼び出し
 
 ```bash
