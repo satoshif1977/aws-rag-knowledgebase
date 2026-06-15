@@ -251,6 +251,19 @@ pytest lambda/test_index.py lambda/test_ingestion_handler.py -v
 | `lambda/test_ingestion_handler.py` | 11 件 | S3 取り込み・Knowledge Base 同期・バリデーション |
 | **合計** | **21 件** | |
 
+### Go ユニットテスト（AWS 接続不要）
+
+Go Lambda（`lambda_go/`）のヘルパー関数・バリデーションロジックを検証します。
+
+```bash
+cd lambda_go
+go test ./... -v
+```
+
+| テストファイル | テスト数 | 主な検証内容 |
+|---|---|---|
+| `lambda_go/main_test.go` | 10 件 | 環境変数取得・API レスポンス生成・Handler 入力バリデーション |
+
 ---
 
 ### Lambda の手動呼び出し
