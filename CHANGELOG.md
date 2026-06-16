@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-06-16
+
+### Changed
+- boto3 >=1.43.14 -> >=1.43.30
+- actions/setup-go v5 -> v6
+- actions/checkout v4 -> v6
+- codecov/codecov-action v6 -> v7
+- streamlit >=1.57.0 -> >=1.58.0
+
 ## [1.5.0] - 2026-06-04
 
 ### Added
