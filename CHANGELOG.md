@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-06-18
+
+### Added
+- README に Go Test CI バッジ・Go 1.22 言語バッジを追加
+
 ## [1.6.0] - 2026-06-16
 
 ### Changed
