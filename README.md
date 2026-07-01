@@ -1,9 +1,11 @@
 # aws-rag-knowledgebase
 
 ![CI](https://github.com/satoshif1977/aws-rag-knowledgebase/actions/workflows/python-lint.yml/badge.svg)
-![Go Test](https://github.com/satoshif1977/aws-rag-knowledgebase/actions/workflows/go-test.yml/badge.svg)
+[![Go Test](https://github.com/satoshif1977/aws-rag-knowledgebase/actions/workflows/go-test.yml/badge.svg)](https://github.com/satoshif1977/aws-rag-knowledgebase/actions/workflows/go-test.yml)
+[![TypeScript Test](https://github.com/satoshif1977/aws-rag-knowledgebase/actions/workflows/ts-test.yml/badge.svg)](https://github.com/satoshif1977/aws-rag-knowledgebase/actions/workflows/ts-test.yml)
 ![AWS](https://img.shields.io/badge/AWS-232F3E?style=flat&logo=amazon-aws&logoColor=white)
 ![Go](https://img.shields.io/badge/Go-1.22-00ADD8?style=flat&logo=go&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
 ![Terraform](https://img.shields.io/badge/Terraform-623CE4?style=flat&logo=terraform&logoColor=white)
 ![Claude Code](https://img.shields.io/badge/Built%20with-Claude%20Code-orange?logo=anthropic)
@@ -90,7 +92,18 @@ aws-rag-knowledgebase/
 │   ├── rag-architecture-aws2026.drawio.png
 │   └── screenshots/        # 動作確認スクリーンショット
 ├── lambda/
-│   └── index.py            # RAG 処理（S3 取得 + Bedrock 呼び出し）
+│   ├── index.py            # RAG 処理（S3 取得 + Bedrock 呼び出し）
+│   └── test_query_handler.py
+├── lambda_go/
+│   └── query_handler/
+│       ├── main.go         # Go 並置版 Lambda
+│       ├── main_test.go    # Go テスト（10件）
+│       └── go.mod
+├── client_ts/
+│   ├── rag-client.ts       # TypeScript クライアント
+│   ├── rag-client.test.ts  # Jest テスト（57件）
+│   ├── types.ts
+│   └── package.json
 └── terraform/
     ├── main.tf             # S3 / Lambda / API Gateway / IAM / CloudWatch
     ├── variables.tf
@@ -266,6 +279,21 @@ go test ./... -v
 |---|---|---|
 | `lambda_go/main_test.go` | 10 件 | 環境変数取得・API レスポンス生成・Handler 入力バリデーション |
 
+### TypeScript ユニットテスト（AWS 接続不要）
+
+TypeScript クライアント（`client_ts/`）の RAG クエリ関数を Jest でテストします。
+
+```bash
+cd client_ts
+npm ci
+npm test
+# 57件 PASS（query 正常/エラー・検索結果パース・ページネーション・型バリデーション等）
+```
+
+| テストファイル | テスト数 | 主な検証内容 |
+|---|---|---|
+| `client_ts/rag-client.test.ts` | 57 件 | query 正常系・エラーハンドリング・検索結果パース・ページネーション |
+
 ---
 
 ### Lambda の手動呼び出し
@@ -296,6 +324,8 @@ GitHub Actions で Python リント（flake8）と Terraform の静的解析（C
 | ジョブ | 内容 |
 |---|---|
 | Python lint（flake8） | コードスタイル・構文エラーの検出 |
+| Go ユニットテスト | `go test` で Go Lambda のロジックを検証（10件） |
+| TypeScript テスト | Jest で TypeScript クライアントを検証（57件） |
 | terraform fmt / validate | フォーマット・構文チェック |
 | Checkov セキュリティスキャン | IaC のセキュリティポリシー違反を検出（soft_fail: false） |
 
