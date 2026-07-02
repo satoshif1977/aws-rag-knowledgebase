@@ -19,16 +19,20 @@ def _make_sqs_record(bucket: str, key: str, size: int = 1024) -> dict:
     return {
         "messageId": "msg-test-001",
         "receiptHandle": "receipt-test",
-        "body": json.dumps({
-            "Records": [{
-                "eventVersion": "2.1",
-                "eventName": "ObjectCreated:Put",
-                "s3": {
-                    "bucket": {"name": bucket},
-                    "object": {"key": key, "size": size},
-                },
-            }]
-        }),
+        "body": json.dumps(
+            {
+                "Records": [
+                    {
+                        "eventVersion": "2.1",
+                        "eventName": "ObjectCreated:Put",
+                        "s3": {
+                            "bucket": {"name": bucket},
+                            "object": {"key": key, "size": size},
+                        },
+                    }
+                ]
+            }
+        ),
     }
 
 
@@ -55,6 +59,9 @@ class TestGetExtension:
     def test_ネストしたパスでも拡張子を取得(self):
         assert _get_extension("a/b/c/file.md") == ".md"
 
+    def test_docx拡張子を返す(self):
+        assert _get_extension("manual.docx") == ".docx"
+
 
 # ── handler のテスト ─────────────────────────────────────────────────
 class TestHandler:
@@ -62,7 +69,9 @@ class TestHandler:
     def test_pdf取り込みが成功する(self, mock_s3):
         mock_s3.get_object.return_value = _mock_s3_head(2048, "application/pdf")
 
-        result = handler([_make_sqs_record("my-bucket", "docs/report.pdf")], MagicMock())
+        result = handler(
+            [_make_sqs_record("my-bucket", "docs/report.pdf")], MagicMock()
+        )
 
         assert result["total"] == 1
         assert result["errors"] == []
@@ -74,7 +83,9 @@ class TestHandler:
     def test_txt取り込みが成功する(self, mock_s3):
         mock_s3.get_object.return_value = _mock_s3_head(512, "text/plain")
 
-        result = handler([_make_sqs_record("my-bucket", "docs/readme.txt")], MagicMock())
+        result = handler(
+            [_make_sqs_record("my-bucket", "docs/readme.txt")], MagicMock()
+        )
 
         assert result["total"] == 1
         assert result["processed"][0]["status"] == "success"
@@ -131,6 +142,58 @@ class TestHandler:
         event = _make_sqs_record("my-bucket", "notes.md")
 
         result = handler(event, MagicMock())
+
+        assert result["total"] == 1
+        assert result["processed"][0]["status"] == "success"
+
+    @patch("ingestion_handler._s3_client")
+    def test_md取り込みが成功する(self, mock_s3):
+        mock_s3.get_object.return_value = _mock_s3_head(300, "text/markdown")
+
+        result = handler([_make_sqs_record("my-bucket", "README.md")], MagicMock())
+
+        assert result["total"] == 1
+        assert result["processed"][0]["status"] == "success"
+
+    @patch("ingestion_handler._s3_client")
+    def test_複数レコードを一括処理できる(self, mock_s3):
+        mock_s3.get_object.return_value = _mock_s3_head(1024, "application/pdf")
+
+        result = handler(
+            [
+                _make_sqs_record("bucket", "a.pdf"),
+                _make_sqs_record("bucket", "b.txt"),
+            ],
+            MagicMock(),
+        )
+
+        assert result["total"] == 2
+        assert len(result["errors"]) == 0
+
+    def test_拡張子なしファイルはスキップされる(self):
+        result = handler([_make_sqs_record("my-bucket", "Makefile")], MagicMock())
+
+        assert result["total"] == 0
+        assert result["skipped"][0]["status"] == "skipped"
+
+    @patch("ingestion_handler._s3_client")
+    def test_空のRecords配列は空の結果を返す(self, mock_s3):
+        event = [{"messageId": "m1", "body": json.dumps({"Records": []})}]
+
+        result = handler(event, MagicMock())
+
+        assert result["total"] == 0
+        assert result["errors"] == []
+        assert result["skipped"] == []
+
+    @patch("ingestion_handler._s3_client")
+    def test_docx取り込みが成功する(self, mock_s3):
+        mock_s3.get_object.return_value = _mock_s3_head(
+            4096,
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
+
+        result = handler([_make_sqs_record("my-bucket", "manual.docx")], MagicMock())
 
         assert result["total"] == 1
         assert result["processed"][0]["status"] == "success"

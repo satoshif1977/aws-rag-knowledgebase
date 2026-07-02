@@ -7,9 +7,9 @@ _s3_client / _bedrock_client を直接パッチする。
 """
 
 import json
-import index
 from unittest.mock import MagicMock, patch
 
+import index
 from botocore.exceptions import ClientError
 from index import get_document_from_s3, handler, invoke_bedrock
 
@@ -115,3 +115,26 @@ class TestHandler:
         event = {"body": "not a json"}
         result = handler(event, None)
         assert result["statusCode"] == 400
+
+    def test_questionキーがない場合は400を返す(self):
+        event = {"body": json.dumps({"other_key": "value"})}
+        result = handler(event, None)
+        assert result["statusCode"] == 400
+
+    @patch("index.invoke_bedrock", return_value="回答")
+    @patch("index.get_document_from_s3", return_value="doc")
+    @patch("index.S3_BUCKET_NAME", "test-bucket")
+    def test_200レスポンスにCORSヘッダーが含まれる(self, mock_s3, mock_bedrock):
+        event = {"body": json.dumps({"question": "テスト質問"})}
+        result = handler(event, None)
+        assert result["statusCode"] == 200
+        assert result["headers"]["Access-Control-Allow-Origin"] == "*"
+
+    @patch("index.invoke_bedrock", return_value="一般回答")
+    @patch("index.S3_BUCKET_NAME", "")
+    def test_S3_BUCKET_NAMEが空の場合はsourceがgeneral(self, mock_bedrock):
+        event = {"body": json.dumps({"question": "テスト質問"})}
+        result = handler(event, None)
+        assert result["statusCode"] == 200
+        body = json.loads(result["body"])
+        assert body["source"] == "general"
