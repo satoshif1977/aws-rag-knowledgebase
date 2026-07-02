@@ -52,7 +52,10 @@ def _process_s3_record(record: dict[str, Any]) -> dict[str, Any]:
 
     logger.info(
         "ドキュメント取り込み開始: s3://%s/%s (%d bytes, ext=%s)",
-        bucket, key, size, ext,
+        bucket,
+        key,
+        size,
+        ext,
     )
 
     # 拡張子の二重確認（Pipes フィルターをすり抜けた非対応ファイルへの保険）
@@ -72,7 +75,9 @@ def _process_s3_record(record: dict[str, Any]) -> dict[str, Any]:
 
         logger.info(
             "ドキュメント取り込み成功: %s (%d bytes, content_type=%s)",
-            key, content_length, content_type,
+            key,
+            content_length,
+            content_type,
         )
 
         # ── 実運用での拡張ポイント ─────────────────────────────────────
@@ -108,9 +113,9 @@ def handler(
     records = event if isinstance(event, list) else [event]
     logger.info("ingestion handler 起動: %d レコード", len(records))
 
-    processed: list[dict[str, Any]] = []   # 取り込み成功
-    skipped: list[dict[str, Any]] = []     # 拡張子不一致でスキップ
-    errors: list[dict[str, Any]] = []      # S3 エラー等
+    processed: list[dict[str, Any]] = []  # 取り込み成功
+    skipped: list[dict[str, Any]] = []  # 拡張子不一致でスキップ
+    errors: list[dict[str, Any]] = []  # S3 エラー等
 
     for sqs_record in records:
         try:
@@ -134,7 +139,9 @@ def handler(
 
     logger.info(
         "取り込み完了: 成功=%d / スキップ=%d / エラー=%d",
-        len(processed), len(skipped), len(errors),
+        len(processed),
+        len(skipped),
+        len(errors),
     )
     return {
         "processed": processed,
