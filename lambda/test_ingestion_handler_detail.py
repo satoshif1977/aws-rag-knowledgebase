@@ -79,7 +79,8 @@ class TestHandlerResultDetail:
     @patch("ingestion_handler._s3_client")
     def test_処理済みリストのcontent_typeが正しい(self, mock_s3):
         mock_s3.get_object.return_value = _mock_s3_response(
-            1024, "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            1024,
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         )
         result = handler([_make_sqs_record("bucket", "manual.docx")], MagicMock())
         assert "wordprocessingml" in result["processed"][0]["content_type"]
@@ -137,9 +138,9 @@ class TestHandlerEdgeCases:
 
         result = handler(
             [
-                _make_sqs_record("bucket", "a.txt"),   # success
-                _make_sqs_record("bucket", "b.jpg"),   # skipped（非対応拡張子）
-                _make_sqs_record("bucket", "c.pdf"),   # error（S3 エラー）
+                _make_sqs_record("bucket", "a.txt"),  # success
+                _make_sqs_record("bucket", "b.jpg"),  # skipped（非対応拡張子）
+                _make_sqs_record("bucket", "c.pdf"),  # error（S3 エラー）
             ],
             MagicMock(),
         )

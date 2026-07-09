@@ -85,7 +85,9 @@ class TestInvokeBedrockDetail:
         assert "a" * 8000 in user_content
 
     @patch("index._bedrock_client")
-    def test_ドキュメントなし時のプロンプトに社内ドキュメントなし文言が含まれる(self, mock_bedrock):
+    def test_ドキュメントなし時のプロンプトに社内ドキュメントなし文言が含まれる(
+        self, mock_bedrock
+    ):
         """ドキュメントが空の場合、プロンプトに「見つかりませんでした」が含まれること"""
         mock_bedrock.invoke_model.return_value = {
             "body": MagicMock(
