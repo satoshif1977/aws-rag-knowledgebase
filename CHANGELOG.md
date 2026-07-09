@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-07-10
+
+### Added
+- `lambda_go/main_detail_test.go`: Go ユニットテスト 10 件 → 36 件に拡充（構造体 JSON 検証・bucketName 空判定・Handler ヘッダー検証など）
+- `lambda/test_index_detail.py`: Python ユニットテスト追加（S3 キャッシュ詳細・8000 文字制限・dict body・ヘッダー検証など 13 件）
+- `lambda/test_ingestion_handler_detail.py`: Python ユニットテスト追加（拡張子バリエーション・処理結果フィールド検証・混在レコードなど 13 件）
+
+### Fixed
+- CI: `python-lint.yml` のトリガーブランチを `master` → `main` に修正（CI が動作していなかった問題を解消）
+
+### Changed
+- `lambda/ingestion_handler.py`: black フォーマット適用
+
 ## [1.7.0] - 2026-06-18
 
 ### Added
