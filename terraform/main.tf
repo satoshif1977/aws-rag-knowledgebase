@@ -89,8 +89,8 @@ resource "aws_iam_role_policy" "lambda_permissions" {
     Statement = [
       {
         # Bedrock 呼び出し権限
-        Effect   = "Allow"
-        Action   = ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"]
+        Effect = "Allow"
+        Action = ["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"]
         # JP 推論プロファイルは ap-northeast-1/3 にルーティングするため両方の ARN を許可
         Resource = [
           "arn:aws:bedrock:${var.aws_region}:${data.aws_caller_identity.current.account_id}:inference-profile/${var.bedrock_model_id}",
