@@ -183,3 +183,105 @@ describe("buildErrorResponse", () => {
     expect(response.headers["Content-Type"]).toBe("application/json");
   });
 });
+
+// ── 追加テスト（rag_client） ──────────────────────────────
+
+describe("isDocumentAvailable (追加)", () => {
+  it("should return true for single character", () => {
+    expect(isDocumentAvailable("A")).toBe(true);
+  });
+
+  it("should return false for newline only", () => {
+    expect(isDocumentAvailable("\n")).toBe(false);
+  });
+
+  it("should return false for tab and space mix", () => {
+    expect(isDocumentAvailable("\t \t")).toBe(false);
+  });
+});
+
+describe("truncateDocument (追加)", () => {
+  it("should return empty string for empty input", () => {
+    expect(truncateDocument("")).toBe("");
+  });
+
+  it("should return empty string when maxChars=0", () => {
+    expect(truncateDocument("abc", 0)).toBe("");
+  });
+
+  it("should preserve single char when within limit", () => {
+    expect(truncateDocument("X", 100)).toBe("X");
+  });
+});
+
+describe("buildUserMessage (追加)", () => {
+  it("should use fallback when document is whitespace-only", () => {
+    const msg = buildUserMessage("   ", "質問です");
+    expect(msg).toContain("社内ドキュメントが見つかりませんでした");
+  });
+
+  it("should include question in both document and no-document branches", () => {
+    const withDoc = buildUserMessage("内容あり", "質問A");
+    const noDoc = buildUserMessage("", "質問A");
+    expect(withDoc).toContain("質問A");
+    expect(noDoc).toContain("質問A");
+  });
+});
+
+describe("buildBedrockPayload (追加)", () => {
+  it("should set messages[0].role to 'user'", () => {
+    const payload = buildBedrockPayload("doc", "question");
+    expect(payload.messages[0].role).toBe("user");
+  });
+
+  it("should set anthropic_version to bedrock-2023-05-31", () => {
+    const payload = buildBedrockPayload("doc", "question");
+    expect(payload.anthropic_version).toBe("bedrock-2023-05-31");
+  });
+
+  it("should set max_tokens to 1000", () => {
+    const payload = buildBedrockPayload("doc", "question");
+    expect(payload.max_tokens).toBe(1000);
+  });
+});
+
+describe("parseQuestion (追加)", () => {
+  it("should return null when question field is a number", () => {
+    const event = { body: JSON.stringify({ question: 42 }) };
+    expect(parseQuestion(event)).toBeNull();
+  });
+
+  it("should return null for empty JSON body {}", () => {
+    const event = { body: "{}" };
+    expect(parseQuestion(event)).toBeNull();
+  });
+});
+
+describe("buildSuccessResponse (追加)", () => {
+  it("should include Content-Type header", () => {
+    const response = buildSuccessResponse("回答", "s3_document");
+    expect(response.headers["Content-Type"]).toBe("application/json");
+  });
+
+  it("should return valid JSON body", () => {
+    const response = buildSuccessResponse("回答テスト", "general");
+    expect(() => JSON.parse(response.body)).not.toThrow();
+  });
+});
+
+describe("buildErrorResponse (追加)", () => {
+  it("should include CORS header", () => {
+    const response = buildErrorResponse(400, "error");
+    expect(response.headers["Access-Control-Allow-Origin"]).toBe("*");
+  });
+
+  it("should return valid JSON body", () => {
+    const response = buildErrorResponse(404, "Not Found");
+    expect(() => JSON.parse(response.body)).not.toThrow();
+  });
+
+  it("should return 404 status code", () => {
+    const response = buildErrorResponse(404, "Not Found");
+    expect(response.statusCode).toBe(404);
+  });
+});

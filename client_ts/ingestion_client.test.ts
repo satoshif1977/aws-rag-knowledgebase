@@ -169,3 +169,103 @@ describe("parseSqsBody", () => {
     expect(result).toBeDefined();
   });
 });
+
+// ── 追加テスト（ingestion_client） ───────────────────────
+
+describe("getExtension (追加)", () => {
+  it("should return last extension for multiple dots", () => {
+    expect(getExtension("file.backup.txt")).toBe(".txt");
+  });
+
+  it("should return empty string for empty input", () => {
+    expect(getExtension("")).toBe("");
+  });
+
+  it("should handle S3-style path with extension", () => {
+    expect(getExtension("prefix/subdir/document.pdf")).toBe(".pdf");
+  });
+
+  it("should normalize .MD to .md", () => {
+    expect(getExtension("README.MD")).toBe(".md");
+  });
+});
+
+describe("isSupportedExtension (追加)", () => {
+  it("should return false for .csv", () => {
+    expect(isSupportedExtension("data.csv")).toBe(false);
+  });
+
+  it("should return false for .zip", () => {
+    expect(isSupportedExtension("archive.zip")).toBe(false);
+  });
+
+  it("should return true for .txt in S3-style path", () => {
+    expect(isSupportedExtension("prefix/guide.txt")).toBe(true);
+  });
+
+  it("should return true for uppercase .PDF (normalized)", () => {
+    expect(isSupportedExtension("policy.PDF")).toBe(true);
+  });
+});
+
+describe("decodeS3Key (追加)", () => {
+  it("should replace multiple + with spaces", () => {
+    expect(decodeS3Key("hello+world+test.pdf")).toBe("hello world test.pdf");
+  });
+
+  it("should leave already-decoded key unchanged", () => {
+    expect(decodeS3Key("plain-file.txt")).toBe("plain-file.txt");
+  });
+
+  it("should decode %20 as space", () => {
+    expect(decodeS3Key("my%20document.pdf")).toBe("my document.pdf");
+  });
+});
+
+describe("buildSkippedResult (追加)", () => {
+  it("should contain 'unsupported extension' in reason", () => {
+    const result = buildSkippedResult("photo.png", ".png");
+    expect(result.reason).toContain("unsupported extension");
+  });
+
+  it("should have status 'skipped'", () => {
+    expect(buildSkippedResult("x.csv", ".csv").status).toBe("skipped");
+  });
+});
+
+describe("buildSuccessResult (追加)", () => {
+  it("should preserve size=0", () => {
+    const result = buildSuccessResult("empty.txt", "bucket", 0, "text/plain");
+    expect(result.size).toBe(0);
+  });
+
+  it("should preserve content_type exactly", () => {
+    const result = buildSuccessResult("doc.pdf", "bucket", 512, "application/pdf");
+    expect(result.content_type).toBe("application/pdf");
+  });
+});
+
+describe("buildErrorResult (追加)", () => {
+  it("should preserve long reason string", () => {
+    const long = "Error: ".repeat(20);
+    const result = buildErrorResult("doc.pdf", long);
+    expect(result.reason).toBe(long);
+  });
+
+  it("should have status 'error'", () => {
+    expect(buildErrorResult("x.pdf", "reason").status).toBe("error");
+  });
+});
+
+describe("parseSqsBody (追加)", () => {
+  it("should return object even without Records key", () => {
+    const result = parseSqsBody({ body: JSON.stringify({ other: "data" }) });
+    expect(result).toBeDefined();
+    expect(result).not.toBeNull();
+  });
+
+  it("should handle empty Records array", () => {
+    const result = parseSqsBody({ body: JSON.stringify({ Records: [] }) });
+    expect(result?.Records).toHaveLength(0);
+  });
+});
