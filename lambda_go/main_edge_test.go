@@ -322,3 +322,181 @@ func BenchmarkHandlerValidation(b *testing.B) {
 		Handler(ctx, event) //nolint:errcheck
 	}
 }
+
+// ── systemPrompt 詳細検証 ─────────────────────────────────────
+
+func TestSystemPrompt_ContainsAssistantKeyword(t *testing.T) {
+	if !strings.Contains(systemPrompt, "専門アシスタント") {
+		t.Error("systemPrompt should contain '専門アシスタント'")
+	}
+}
+
+func TestSystemPrompt_ContainsDepartmentKeyword(t *testing.T) {
+	if !strings.Contains(systemPrompt, "担当部署") {
+		t.Error("systemPrompt should contain '担当部署'")
+	}
+}
+
+func TestSystemPrompt_LengthAtLeast100(t *testing.T) {
+	if len([]rune(systemPrompt)) < 100 {
+		t.Errorf("systemPrompt too short: %d runes", len([]rune(systemPrompt)))
+	}
+}
+
+func TestMaxDocumentBytes_IsPositive(t *testing.T) {
+	if maxDocumentBytes <= 0 {
+		t.Errorf("maxDocumentBytes should be positive, got %d", maxDocumentBytes)
+	}
+}
+
+// ── Handler 追加バリデーション ────────────────────────────────
+
+func TestHandler_CRLFOnlyQuestion_Returns400(t *testing.T) {
+	body, _ := json.Marshal(Request{Question: "\r\n"})
+	resp, _ := Handler(context.Background(), events.APIGatewayProxyRequest{Body: string(body)})
+	if resp.StatusCode != 400 {
+		t.Errorf("CRLF のみ question は 400 を返すべき: got %d", resp.StatusCode)
+	}
+}
+
+func TestHandler_ArrayBody_Returns400(t *testing.T) {
+	// JSON 配列はオブジェクトへの unmarshal に失敗 → 400
+	resp, _ := Handler(context.Background(), events.APIGatewayProxyRequest{
+		Body: `[{"question":"テスト"}]`,
+	})
+	if resp.StatusCode != 400 {
+		t.Errorf("配列 body は 400 を返すべき: got %d", resp.StatusCode)
+	}
+}
+
+func TestHandler_QuestionAsArray_Returns400(t *testing.T) {
+	// question フィールドが配列型 → string への unmarshal 失敗 → 400
+	resp, _ := Handler(context.Background(), events.APIGatewayProxyRequest{
+		Body: `{"question": ["item1", "item2"]}`,
+	})
+	if resp.StatusCode != 400 {
+		t.Errorf("question が配列の場合は 400 を返すべき: got %d", resp.StatusCode)
+	}
+}
+
+func TestHandler_BooleanQuestion_Returns400(t *testing.T) {
+	// question フィールドが boolean → string への unmarshal 失敗 → 400
+	resp, _ := Handler(context.Background(), events.APIGatewayProxyRequest{
+		Body: `{"question": true}`,
+	})
+	if resp.StatusCode != 400 {
+		t.Errorf("question が boolean の場合は 400 を返すべき: got %d", resp.StatusCode)
+	}
+}
+
+// ── buildAPIResponse 追加ケース ───────────────────────────────
+
+func TestBuildAPIResponse_IntBody(t *testing.T) {
+	resp, err := buildAPIResponse(200, 42)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp.Body != "42" {
+		t.Errorf("Body = %q, want %q", resp.Body, "42")
+	}
+}
+
+func TestBuildAPIResponse_422Status(t *testing.T) {
+	resp, err := buildAPIResponse(422, map[string]string{"error": "validation failed"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp.StatusCode != 422 {
+		t.Errorf("StatusCode = %d, want 422", resp.StatusCode)
+	}
+}
+
+func TestBuildAPIResponse_AllStatusesHaveCORSHeader(t *testing.T) {
+	// 200/400/404/500 すべてで CORS ヘッダーが付くこと
+	for _, code := range []int{200, 400, 404, 500} {
+		resp, err := buildAPIResponse(code, map[string]string{})
+		if err != nil {
+			t.Fatalf("status=%d: unexpected error: %v", code, err)
+		}
+		if resp.Headers["Access-Control-Allow-Origin"] != "*" {
+			t.Errorf("status %d: CORS header missing or wrong: %q", code, resp.Headers["Access-Control-Allow-Origin"])
+		}
+	}
+}
+
+// ── BedrockBody 追加ケース ────────────────────────────────────
+
+func TestBedrockBody_AnthropicVersion(t *testing.T) {
+	body := BedrockBody{AnthropicVersion: "bedrock-2023-05-31"}
+	b, _ := json.Marshal(body)
+	var got BedrockBody
+	if err := json.Unmarshal(b, &got); err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+	if got.AnthropicVersion != "bedrock-2023-05-31" {
+		t.Errorf("AnthropicVersion = %q, want bedrock-2023-05-31", got.AnthropicVersion)
+	}
+}
+
+func TestBedrockBody_SystemPreserved(t *testing.T) {
+	body := BedrockBody{System: systemPrompt, MaxTokens: 1000}
+	b, _ := json.Marshal(body)
+	var got BedrockBody
+	if err := json.Unmarshal(b, &got); err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+	if got.System != systemPrompt {
+		t.Errorf("System field not preserved: got len=%d, want len=%d", len(got.System), len(systemPrompt))
+	}
+}
+
+// ── getEnv スペース文字 ───────────────────────────────────────
+
+func TestGetEnv_SpaceValueNotFallback(t *testing.T) {
+	// スペース文字は空文字でないため fallback しない（getEnv は v != "" で判定）
+	t.Setenv("TEST_SPACE_KEY_RAG", " ")
+	got := getEnv("TEST_SPACE_KEY_RAG", "fallback")
+	if got != " " {
+		t.Errorf("スペース値は fallback しない: got %q, want \" \"", got)
+	}
+}
+
+// ── Request / Response 追加ケース ────────────────────────────
+
+func TestRequest_UnicodeQuestion(t *testing.T) {
+	// Unicode 文字（絵文字・記号）が round-trip で保持される
+	q := "有給休暇の申請方法は？🎉"
+	req := Request{Question: q}
+	b, _ := json.Marshal(req)
+	var got Request
+	if err := json.Unmarshal(b, &got); err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+	if got.Question != q {
+		t.Errorf("Question = %q, want %q", got.Question, q)
+	}
+}
+
+func TestResponse_AnswerAndSourcePreserved(t *testing.T) {
+	r := Response{Answer: "詳細な回答テキストです", Source: "s3_document"}
+	b, _ := json.Marshal(r)
+	var got Response
+	if err := json.Unmarshal(b, &got); err != nil {
+		t.Fatalf("unmarshal error: %v", err)
+	}
+	if got.Answer != r.Answer {
+		t.Errorf("Answer = %q, want %q", got.Answer, r.Answer)
+	}
+	if got.Source != r.Source {
+		t.Errorf("Source = %q, want %q", got.Source, r.Source)
+	}
+}
+
+func TestHandler_TabOnlyQuestion_Returns400(t *testing.T) {
+	// タブ文字のみの quality は TrimSpace 後に空文字 → 400
+	body, _ := json.Marshal(Request{Question: "\t\t\t"})
+	resp, _ := Handler(context.Background(), events.APIGatewayProxyRequest{Body: string(body)})
+	if resp.StatusCode != 400 {
+		t.Errorf("タブのみ question は 400 を返すべき: got %d", resp.StatusCode)
+	}
+}
