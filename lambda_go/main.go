@@ -49,6 +49,10 @@ var (
 	bedrockClient *bedrockruntime.Client
 )
 
+// リトライ実行器。Bedrock のスロットリングと S3 の一時エラーに備える。
+// テストからは Sleep / Rand を差し替えて実待機ゼロで検証する。
+var retrier = NewRetrier()
+
 func init() {
 	cfg, err := config.LoadDefaultConfig(context.Background())
 	if err != nil {
@@ -111,9 +115,11 @@ func getDocumentFromS3(ctx context.Context) (string, error) {
 	if bucketName == "" {
 		return "", nil
 	}
-	out, err := s3Client.GetObject(ctx, &s3.GetObjectInput{
-		Bucket: aws.String(bucketName),
-		Key:    aws.String(s3Key),
+	out, err := RetryValue(ctx, retrier, "GetObject", func(c context.Context) (*s3.GetObjectOutput, error) {
+		return s3Client.GetObject(c, &s3.GetObjectInput{
+			Bucket: aws.String(bucketName),
+			Key:    aws.String(s3Key),
+		})
 	})
 	if err != nil {
 		return "", fmt.Errorf("S3 取得エラー: %w", err)
@@ -157,11 +163,13 @@ func invokeBedrock(ctx context.Context, docText, question string) (string, error
 		return "", fmt.Errorf("リクエスト JSON 生成エラー: %w", err)
 	}
 
-	out, err := bedrockClient.InvokeModel(ctx, &bedrockruntime.InvokeModelInput{
-		ModelId:     aws.String(modelID),
-		Body:        bodyBytes,
-		ContentType: aws.String("application/json"),
-		Accept:      aws.String("application/json"),
+	out, err := RetryValue(ctx, retrier, "InvokeModel", func(c context.Context) (*bedrockruntime.InvokeModelOutput, error) {
+		return bedrockClient.InvokeModel(c, &bedrockruntime.InvokeModelInput{
+			ModelId:     aws.String(modelID),
+			Body:        bodyBytes,
+			ContentType: aws.String("application/json"),
+			Accept:      aws.String("application/json"),
+		})
 	})
 	if err != nil {
 		return "", fmt.Errorf("Bedrock 呼び出しエラー: %w", err)
