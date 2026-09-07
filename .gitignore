@@ -25,3 +25,7 @@ docx_extracted/
 # Node.js
 node_modules/
 dist/
+
+# Go ビルド成果物（go build の出力）
+*.exe
+lambda_go/aws-rag-knowledgebase
