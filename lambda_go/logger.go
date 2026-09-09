@@ -3,9 +3,9 @@
 // CloudWatch Logs Insights で検索・集計できるよう、ログを 1 行の JSON として出力する。
 // あわせて、パスワードやトークンなどの機密情報がログに流出しないようマスキングする。
 //
-// processor / scheduler の両 Lambda から共有するため internal パッケージに置く。
-// 同リポジトリの awsretry と同じ「AWS 呼び出しの運用品質を揃える」方針で、
+// 同ディレクトリの retry.go と同じ「AWS 呼び出しの運用品質を揃える」方針で、
 // RetryLogHook() を通じてリトライ層と結線できる。
+// 同リポジトリの client_ts/logger.ts（TypeScript 版）と出力キーを揃えた並置実装。
 //
 // 設計方針:
 //   - 車輪の再発明を避け、標準ライブラリの log/slog を土台にする。
