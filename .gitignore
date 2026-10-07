@@ -29,3 +29,7 @@ dist/
 # Go ビルド成果物（go build の出力）
 *.exe
 lambda_go/aws-rag-knowledgebase
+
+# go test -coverprofile / CI が生成する
+coverage.out
+*.cover.out
