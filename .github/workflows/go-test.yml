@@ -20,9 +20,21 @@ jobs:
         with:
           go-version-file: lambda_go/go.mod
           cache-dependency-path: lambda_go/go.sum
+      - name: go vet（静的解析）
+        working-directory: lambda_go
+        run: go vet ./...
+
+      - name: Lambda ビルド確認（linux/arm64）
+        working-directory: lambda_go
+        run: GOOS=linux GOARCH=arm64 go build -o /dev/null .
+
       - name: Run tests
         working-directory: lambda_go
-        run: go test ./... -v -coverprofile=coverage.out -covermode=atomic
+        run: go test ./... -v -count=1 -coverprofile=coverage.out -covermode=atomic
+
+      - name: Race 検出（data race・goroutine 競合）
+        working-directory: lambda_go
+        run: go test -race ./... -count=1
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v7
         with:
