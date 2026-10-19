@@ -104,10 +104,24 @@ resource "aws_iam_role_policy" "ingestion_lambda_permissions" {
 }
 
 # ── ドキュメント取り込み Lambda（デプロイパッケージ） ────────────────────────
+# ingestion_handler.py は logger / metrics / retry / wiring を import するため、
+# source_file（単一ファイル）では実行時に ImportError になる。
+# lambda/ ごと固め、テストと __pycache__ だけ除外する。
 data "archive_file" "ingestion_lambda" {
   type        = "zip"
-  source_file = "${path.module}/../lambda/ingestion_handler.py"
+  source_dir  = "${path.module}/../lambda"
   output_path = "${path.module}/../lambda_ingestion.zip"
+
+  excludes = [
+    "test_index.py",
+    "test_index_detail.py",
+    "test_ingestion_handler.py",
+    "test_ingestion_handler_detail.py",
+    "test_logger.py",
+    "test_metrics.py",
+    "test_retry.py",
+    "test_wiring.py",
+  ]
 }
 
 # ── ドキュメント取り込み Lambda 関数 ──────────────────────────────────────────

@@ -12,6 +12,18 @@ data "archive_file" "lambda" {
   type        = "zip"
   source_dir  = "${path.module}/../lambda"
   output_path = "${path.module}/../lambda.zip"
+
+  # テストコードは実行に不要。パッケージサイズとコールドスタートを抑える
+  excludes = [
+    "test_index.py",
+    "test_index_detail.py",
+    "test_ingestion_handler.py",
+    "test_ingestion_handler_detail.py",
+    "test_logger.py",
+    "test_metrics.py",
+    "test_retry.py",
+    "test_wiring.py",
+  ]
 }
 
 # ── S3 バケット（ドキュメント格納） ───────────────────────
