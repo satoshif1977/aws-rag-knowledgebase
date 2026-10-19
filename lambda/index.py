@@ -9,16 +9,24 @@ aws-rag-knowledgebase: 社内規定 PDF Q&A Lambda
 """
 
 import json
-import logging
 import os
+import sys
+import time
 from typing import Any
 
 import boto3
 from botocore.exceptions import ClientError
 
-# ── ロガー設定 ─────────────────────────────────────────────
-logger = logging.getLogger()
-logger.setLevel(os.environ.get("LOG_LEVEL", "INFO"))
+sys.path.insert(0, os.path.dirname(__file__))
+from logger import StructuredLogger, create_logger_from_env  # noqa: E402
+from metrics import MetricsCollector, create_metrics_from_env  # noqa: E402
+from retry import retry_call  # noqa: E402
+from wiring import RETRY_CONFIG, retry_hooks  # noqa: E402
+
+# ── ロガー ─────────────────────────────────────────────────
+# 1 行 JSON で出し、機密キーは自動でマスキングする（logger.py を参照）。
+# 社内規定の Q&A なので、質問文・回答文そのものはログに残さない。
+logger = create_logger_from_env()
 
 # ── 定数（環境変数から取得） ───────────────────────────────
 BEDROCK_MODEL_ID = os.environ.get(
@@ -42,31 +50,63 @@ _cached_document: str | None = None
 
 
 # ── S3 からテキスト取得 ────────────────────────────────────
-def get_document_from_s3(bucket: str, key: str) -> str:
-    """S3 からドキュメントテキストを取得する（キャッシュ付き）"""
+def get_document_from_s3(
+    bucket: str,
+    key: str,
+    *,
+    log: StructuredLogger | None = None,
+    metrics: MetricsCollector | None = None,
+) -> str:
+    """S3 からドキュメントテキストを取得する（キャッシュ付き）
+
+    SlowDown（S3 のスロットリング）に備えてリトライ付きで呼び出す。
+    """
     global _cached_document
+    log = log or logger
     if _cached_document is not None:
-        logger.info("S3 ドキュメントキャッシュ使用（S3 呼び出しをスキップ）")
+        log.info("S3 のキャッシュを使用します", cached=True)
+        if metrics is not None:
+            metrics.add_metric("S3CacheHits", 1, unit="Count")
         return _cached_document
 
     try:
-        response = _s3_client.get_object(Bucket=bucket, Key=key)
-        content = response["Body"].read().decode("utf-8")
-        logger.info(
-            f"S3 ドキュメント取得成功: s3://{bucket}/{key} ({len(content)} 文字)"
+        response = retry_call(
+            _s3_client.get_object,
+            Bucket=bucket,
+            Key=key,
+            config=RETRY_CONFIG,
+            on_retry=retry_hooks("S3.GetObject", log, metrics),
         )
+        content = response["Body"].read().decode("utf-8")
+        log.info(
+            "S3 からドキュメントを取得しました",
+            s3_bucket=bucket,
+            s3_key=key,
+            characters=len(content),
+        )
+        if metrics is not None:
+            metrics.add_metric("S3CacheMisses", 1, unit="Count")
+            metrics.add_metric("DocumentCharacters", len(content), unit="Count")
         _cached_document = content
         return content
     except ClientError as e:
         error_code = e.response["Error"]["Code"]
-        logger.error(f"S3 取得エラー: {error_code} / {e}")
+        log.error("S3 の取得に失敗しました", error_code=error_code, s3_key=key, error=e)
+        if metrics is not None:
+            metrics.add_metric("S3Errors", 1, unit="Count")
         if error_code == "NoSuchKey":
             return ""
         raise
 
 
 # ── Bedrock 呼び出し ───────────────────────────────────────
-def invoke_bedrock(document_text: str, question: str) -> str:
+def invoke_bedrock(
+    document_text: str,
+    question: str,
+    *,
+    log: StructuredLogger | None = None,
+    metrics: MetricsCollector | None = None,
+) -> str:
     """
     S3 から取得したドキュメント内容を Claude のコンテキストに渡して回答を生成する。
     これが「RAG の簡易実装」: ドキュメント全文をプロンプトに埋め込む。
@@ -97,24 +137,42 @@ def invoke_bedrock(document_text: str, question: str) -> str:
         }
     )
 
+    log = log or logger
     try:
-        response = _bedrock_client.invoke_model(
+        # ThrottlingException / ModelNotReadyException は retry.py が
+        # 指数バックオフ + フルジッターで自動リトライする。
+        # ここまで来た例外は、リトライしても回復しなかったものだけ。
+        response = retry_call(
+            _bedrock_client.invoke_model,
             modelId=BEDROCK_MODEL_ID,
             body=body,
             contentType="application/json",
             accept="application/json",
+            config=RETRY_CONFIG,
+            on_retry=retry_hooks("Bedrock.InvokeModel", log, metrics),
         )
         result = json.loads(response["body"].read())
         answer = result["content"][0]["text"]
-        logger.info(f"Bedrock 回答生成成功: model={BEDROCK_MODEL_ID}")
+        log.info(
+            "Bedrock が回答を生成しました",
+            model_id=BEDROCK_MODEL_ID,
+            answer_length=len(answer),
+        )
+        if metrics is not None:
+            metrics.add_metric("BedrockSuccess", 1, unit="Count")
+            metrics.add_metric("AnswerCharacters", len(answer), unit="Count")
         return answer
 
     except ClientError as e:
         error_code = e.response["Error"]["Code"]
-        logger.error(f"Bedrock エラー: {error_code} / {e}")
+        log.error("Bedrock がエラーを返しました", error_code=error_code, error=e)
+        if metrics is not None:
+            metrics.add_metric("BedrockErrors", 1, unit="Count")
+            metrics.set_property("last_bedrock_error", error_code)
         if error_code == "AccessDeniedException":
             return "AI 機能が利用できません。管理者にご連絡ください。"
         elif error_code == "ThrottlingException":
+            # リトライを使い切ってなお失敗した場合のみここに来る
             return "リクエストが集中しています。しばらくしてから再度お試しください。"
         else:
             return "回答の生成に失敗しました。担当部署にご確認ください。"
@@ -127,7 +185,26 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
     リクエストボディ: {"question": "質問テキスト"}
     レスポンス: {"answer": "回答テキスト", "source": "s3_document or general"}
     """
-    logger.info("Lambda 起動")
+    request_id = getattr(context, "aws_request_id", None)
+    log = logger.child(request_id=request_id) if request_id else logger
+    metrics = create_metrics_from_env()
+    metrics.set_dimensions(
+        FunctionName=os.environ.get("AWS_LAMBDA_FUNCTION_NAME", "local")
+    )
+    started = time.monotonic()
+    log.info("リクエストを受信しました")
+
+    def finish(response: dict[str, Any]) -> dict[str, Any]:
+        """レスポンスを返す直前に、必ずメトリクスを出し切る。"""
+        metrics.add_metric(
+            "HandlerDuration", (time.monotonic() - started) * 1000, unit="Milliseconds"
+        )
+        metrics.add_metric("StatusCode", response["statusCode"], unit="None")
+        try:
+            metrics.flush()
+        except Exception as exc:  # pragma: no cover - 想定外のみ
+            log.warn("メトリクスの出力に失敗しました", error=exc)
+        return response
 
     # ── リクエスト解析 ─────────────────────────────────────
     try:
@@ -137,47 +214,66 @@ def handler(event: dict[str, Any], context: Any) -> dict[str, Any]:
         else:
             body = body_str
     except json.JSONDecodeError:
-        logger.error("リクエストボディの JSON パース失敗")
-        return {
-            "statusCode": 400,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*",
-            },
-            "body": json.dumps({"error": "Invalid JSON"}, ensure_ascii=False),
-        }
+        log.error("リクエストボディを JSON として読めませんでした")
+        metrics.add_metric("BadRequests", 1, unit="Count")
+        return finish(
+            {
+                "statusCode": 400,
+                "headers": {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
+                },
+                "body": json.dumps({"error": "Invalid JSON"}, ensure_ascii=False),
+            }
+        )
 
     question = body.get("question", "").strip()
     if not question:
-        return {
-            "statusCode": 400,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*",
-            },
-            "body": json.dumps({"error": "質問が空です"}, ensure_ascii=False),
-        }
+        log.warn("質問が空のリクエストを受け取りました")
+        metrics.add_metric("BadRequests", 1, unit="Count")
+        return finish(
+            {
+                "statusCode": 400,
+                "headers": {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
+                },
+                "body": json.dumps({"error": "質問が空です"}, ensure_ascii=False),
+            }
+        )
 
-    logger.info(f"質問受信: {question[:50]}...")
+    # 質問文そのものは残さない。社内規定の Q&A なので、
+    # 質問の中に個人名や処遇の相談が含まれうる（長さだけ記録する）。
+    log.info("質問を受信しました", question_length=len(question))
+    metrics.add_metric("QuestionCharacters", len(question), unit="Count")
 
     # ── S3 からドキュメント取得 ────────────────────────────
     document_text = ""
     source = "general"
     if S3_BUCKET_NAME:
-        document_text = get_document_from_s3(S3_BUCKET_NAME, S3_PDF_KEY)
+        document_text = get_document_from_s3(
+            S3_BUCKET_NAME, S3_PDF_KEY, log=log, metrics=metrics
+        )
         if document_text:
             source = "s3_document"
 
     # ── Bedrock で回答生成 ────────────────────────────────
-    answer = invoke_bedrock(document_text, question)
+    answer = invoke_bedrock(document_text, question, log=log, metrics=metrics)
 
-    logger.info(f"回答生成完了 (source={source}): {answer[:50]}...")
+    # 回答文も残さない（ドキュメントの中身がそのまま出てしまうため）
+    log.info("回答を生成しました", source=source, answer_length=len(answer))
+    metrics.set_property("source", source)
+    metrics.add_metric("AnswersReturned", 1, unit="Count")
 
-    return {
-        "statusCode": 200,
-        "headers": {
-            "Content-Type": "application/json",
-            "Access-Control-Allow-Origin": "*",
-        },
-        "body": json.dumps({"answer": answer, "source": source}, ensure_ascii=False),
-    }
+    return finish(
+        {
+            "statusCode": 200,
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+            },
+            "body": json.dumps(
+                {"answer": answer, "source": source}, ensure_ascii=False
+            ),
+        }
+    )
